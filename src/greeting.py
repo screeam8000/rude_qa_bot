@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import Dict, Any
 
 from telebot.types import InlineKeyboardButton, User, InlineKeyboardMarkup, Message
@@ -61,7 +62,17 @@ class NewbieStorage:
 class QuestionProvider:
     @staticmethod
     def get_question() -> GreetingQuestionDto:
-        return GreetingQuestionDto(
+        return QuestionProvider.__get_random_question()
+
+    @staticmethod
+    def __get_random_question():
+        """
+        This method create greeting question list of some questions
+        then return first random question from list
+        Note: if need more questions - need to rework this method
+        :return: GreetingQuestionDto
+        """
+        greeting_question_ui = GreetingQuestionDto(
             text='{mention}, UI это API?',
             keyboard=InlineKeyboardMarkup().row(
                 InlineKeyboardButton(text='Да, определённо!', callback_data='да'),
@@ -72,5 +83,34 @@ class QuestionProvider:
                 'да': '*{first_name} считает, что да.*',
                 'нет': '*{first_name} считает, что нет. ¯\\_(ツ)_/¯*',
             }
-
         )
+
+        greeting_question_git = GreetingQuestionDto(
+            text='{mention}, Git: merge или rebase?',
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(text='Конечно merge', callback_data='merge'),
+                InlineKeyboardButton(text='Конечно rebase', callback_data='rebase'),
+            ),
+            timeout=120,
+            reply={
+                'merge': '*{first_name} считает, что merge правильнее.*',
+                'rebase': '*{first_name} считает, что rebase правильнее.*',
+            }
+        )
+
+        greeting_question_bdd = GreetingQuestionDto(
+            text='{mention}, BDD это круто?',
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(text='Да, это круто!', callback_data='да'),
+                InlineKeyboardButton(text='Нет, это хуйня!', callback_data='нет'),
+            ),
+            timeout=120,
+            reply={
+                'да': '*{first_name} считает, что да. ¯\\_(ツ)_/¯*',
+                'нет': '*{first_name} считает, что нет.*',
+            }
+        )
+
+        greeting_list = [greeting_question_ui, greeting_question_git, greeting_question_bdd]
+
+        return random.choice(greeting_list)
