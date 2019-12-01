@@ -1,6 +1,6 @@
 from restriction import RestrictionStorage
 
-__version__ = '1.0.13'
+__version__ = '1.0.14'
 
 import logging
 
@@ -243,6 +243,13 @@ def ban_handler(message: Message):
 def greeting_handler(message: Message):
     for new_user in message.new_chat_members:
         logger.info(f'New member joined the group: {new_user}')
+
+        new_chat_member = bot.get_chat_member(message.chat.id, new_user.id)
+        if new_chat_member.status == TelegramMemberStatus.RESTRICTED:
+            logger.warning(f'{new_user.username} is rejoined user with active restriction')
+            methods.delete_chat_message(message)
+            break
+
         question = QuestionProvider.get_question()
 
         try:
