@@ -1,9 +1,6 @@
 import logging
 import random
-import yaml
-
-from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from telebot.types import InlineKeyboardButton, User, InlineKeyboardMarkup, Message
 
@@ -62,58 +59,58 @@ class NewbieStorage:
         return list(self._storage.keys())
 
 
-class QuestionLoader:
-    GREETING_QUESTIONS_FILE: Path = Path('./resources/questions.yaml')
-    DEFAULT_QUESTION_TEXT = '{mention} You ok?'
-    DEFAULT_QUESTION_OPTION = 'Yep'
-    DEFAULT_QUESTION_REPLY = 'Roger!'
-    DEFAULT_QUESTION_TIMEOUT = 120
-
-    @staticmethod
-    def load_questions() -> List[GreetingQuestionDto]:
-        """
-        This method loads greeting questions list from yaml file
-        Note: dynamical reload can be added here
-        :return: List[GreetingQuestionDto] - list with greeting question dto's
-        """
-        result = []
-        if QuestionLoader.GREETING_QUESTIONS_FILE.exists():
-            with QuestionLoader.GREETING_QUESTIONS_FILE.open("r", encoding="utf8") as f:
-                questions_dict = yaml.load(f)
-            for question in questions_dict.get('questions', []):
-                # TODO: validate question structure  # QuestionLoader.validate(question)
-                buttons = []
-                replies = {}
-                timeout = question.get(
-                    'question_timeout',
-                    questions_dict.get('global_question_timeout', QuestionLoader.DEFAULT_QUESTION_TIMEOUT)
-                )
-                for i, opt in enumerate(question.get('options', [])):
-                    buttons.append(
-                        InlineKeyboardButton(
-                            text=opt.get('option_text', QuestionLoader.DEFAULT_QUESTION_OPTION),
-                            callback_data=str(i),
-                        ))
-                    replies[str(i)] = opt.get('reply_text', QuestionLoader.DEFAULT_QUESTION_REPLY)
-
-                result.append(
-                    GreetingQuestionDto(
-                        text=question.get('text', QuestionLoader.DEFAULT_QUESTION_TEXT),
-                        keyboard=InlineKeyboardMarkup().row(*buttons),
-                        timeout=timeout,
-                        reply=replies,
-                    ))
-
-        return result
-
-
 class QuestionProvider:
-    _questions: List[GreetingQuestionDto] = QuestionLoader.load_questions()
-
     @staticmethod
     def get_question() -> GreetingQuestionDto:
+        return QuestionProvider.__get_random_question()
+
+    @staticmethod
+    def __get_random_question():
         """
-        This method return random question from greeting questions list
+        This method create greeting question list of some questions
+        then return first random question from list
+        Note: if need more questions - need to rework this method
         :return: GreetingQuestionDto
         """
-        return random.choice(QuestionProvider._questions)
+        greeting_question_ui = GreetingQuestionDto(
+            text='{mention}, UI это API?',
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(text='Да, определённо!', callback_data='да'),
+                InlineKeyboardButton(text='Нет, обоссыте меня', callback_data='нет'),
+            ),
+            timeout=120,
+            reply={
+                'да': '*{first_name} считает, что да.*',
+                'нет': '*{first_name} считает, что нет. ¯\\_(ツ)_/¯*',
+            }
+        )
+
+        greeting_question_git = GreetingQuestionDto(
+            text='{mention}, Git: merge или rebase?',
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(text='Конечно merge', callback_data='merge'),
+                InlineKeyboardButton(text='Конечно rebase', callback_data='rebase'),
+            ),
+            timeout=120,
+            reply={
+                'merge': '*{first_name} считает, что merge правильнее.*',
+                'rebase': '*{first_name} считает, что rebase правильнее.*',
+            }
+        )
+
+        greeting_question_bdd = GreetingQuestionDto(
+            text='{mention}, BDD это круто?',
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(text='Да, это круто!', callback_data='да'),
+                InlineKeyboardButton(text='Нет, это хуйня!', callback_data='нет'),
+            ),
+            timeout=120,
+            reply={
+                'да': '*{first_name} считает, что да. ¯\\_(ツ)_/¯*',
+                'нет': '*{first_name} считает, что нет.*',
+            }
+        )
+
+        greeting_list = [greeting_question_ui, greeting_question_git, greeting_question_bdd]
+
+        return random.choice(greeting_list)
