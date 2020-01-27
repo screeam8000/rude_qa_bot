@@ -1,11 +1,15 @@
 import logging
 import random
-from typing import Dict, Any
+import yaml
+
+from pathlib import Path
+from typing import Dict, Any, List
 
 from telebot.types import InlineKeyboardButton, User, InlineKeyboardMarkup, Message
+from yaml.scanner import ScannerError
 
 from dto import GreetingQuestionDto, NewbieDto
-from error import UserAlreadyInStorageError, UserNotFoundInStorageError, UserStorageUpdateError
+from error import UserAlreadyInStorageError, UserNotFoundInStorageError, UserStorageUpdateError, GreetingsLoadError
 
 
 class NewbieStorage:
@@ -59,58 +63,143 @@ class NewbieStorage:
         return list(self._storage.keys())
 
 
+class QuestionLoader:
+    GREETING_QUESTIONS_FILE: Path = Path('resources/questions.yaml')
+    DEFAULT_QUESTION_TEXT = '{mention}, are you ok?'
+    DEFAULT_QUESTION_OPTION = 'Yep'
+    DEFAULT_QUESTION_REPLY = 'Sure!'
+    DEFAULT_QUESTION_TIMEOUT = 120
+
+    _logger = logging.getLogger('greetings_file_loader')  # Logger from baseConfig settings
+
+    @staticmethod
+    def load_questions() -> List[GreetingQuestionDto]:
+        """
+        This method loads greeting questions list from yaml file
+        Note: dynamical reload can be added here
+        :return: List[GreetingQuestionDto] - list with greeting question dto's
+        """
+        result = QuestionLoader._set_default_greeting()
+        try:
+            result = QuestionLoader._load_questions_from_file()
+        except GreetingsLoadError as gle:
+            QuestionLoader._logger.error(f'Load greeting questions error: {gle}')
+        except Exception as e:
+            QuestionLoader._logger.error(f'Unexpected error: {e}')
+        finally:
+            return result
+
+    @staticmethod
+    def _load_questions_from_file() -> List[GreetingQuestionDto]:
+        """Main load questions method"""
+        questions_dict = QuestionLoader._load_from_file(QuestionLoader.GREETING_QUESTIONS_FILE)
+        questions = questions_dict.get('questions', [])
+
+        if not isinstance(questions, list):  # non-list
+            raise GreetingsLoadError(f'Questions are not as list! Content: {questions}')
+
+        result = []
+        for question in questions:
+            # Check question structure
+            if not QuestionLoader._validate(question):
+                QuestionLoader._logger.error(f'Malformed question found, skipping it. Question: {question}')
+                continue
+            buttons = []
+            replies = {}
+            timeout = question.get(  # TODO: Int type check for global or move it to config
+                'question_timeout',
+                questions_dict.get('global_question_timeout', QuestionLoader.DEFAULT_QUESTION_TIMEOUT)
+            )
+            for i, opt in enumerate(question.get('options', [])):
+                buttons.append(
+                    InlineKeyboardButton(
+                        text=opt.get('option_text', QuestionLoader.DEFAULT_QUESTION_OPTION),
+                        callback_data=str(i),
+                    ))
+                replies[str(i)] = opt.get('reply_text', QuestionLoader.DEFAULT_QUESTION_REPLY)
+
+            result.append(
+                GreetingQuestionDto(
+                    text=question.get('text', QuestionLoader.DEFAULT_QUESTION_TEXT),
+                    keyboard=InlineKeyboardMarkup().row(*buttons),
+                    timeout=timeout,
+                    reply=replies,
+                ))
+            
+        # Final questions check
+        if not result:
+            raise GreetingsLoadError(
+                f'No valid questions were extracted from yaml file! Content: {questions_dict}'
+            )
+        return result
+    
+    @staticmethod
+    def _validate(question) -> bool:
+        """Super simple validator (no asserts)"""
+        if not isinstance(question, dict):
+            return False
+        result = True
+        result = result and question.get('name', False)
+        result = result and question.get('text', False)
+        result = result and isinstance(question.get('question_timeout', 0), int)  # Optional field, only type check
+        
+        options = question.get('options') if isinstance(question.get('options'), list) else []
+        result = result and bool(options)
+        result = result and len(options) > 0
+        
+        for opt in options:
+            if not isinstance(opt, dict):
+                result = False
+                continue
+            result = result and opt.get('option_text', False)
+            result = result and opt.get('reply_text', False)
+        return result
+    
+    @staticmethod
+    def _load_from_file(file_path: Path) -> Dict:
+        """Load dict from yaml file"""
+        if not file_path.exists():
+            raise GreetingsLoadError(
+                f'Can not found yaml file with greeting questions by location: {file_path.absolute()}'
+            )
+        with file_path.open("r", encoding="utf8") as f:
+            try:
+                result = yaml.load(f)
+            except ScannerError as se:
+                raise GreetingsLoadError(f'Malformed questions file: {se}')
+        if not isinstance(result, dict):
+            raise GreetingsLoadError(f'Malformed (not a dict) questions file: {result}')
+        return result
+               
+    @staticmethod
+    def _set_default_greeting() -> List[GreetingQuestionDto]:
+        """Default greeting that will be used if file not available/broken"""
+        result = GreetingQuestionDto(
+            text=QuestionLoader.DEFAULT_QUESTION_TEXT,
+            keyboard=InlineKeyboardMarkup().row(
+                InlineKeyboardButton(
+                    text=QuestionLoader.DEFAULT_QUESTION_OPTION,
+                    callback_data='1',
+                ),
+            ),
+            timeout=QuestionLoader.DEFAULT_QUESTION_TIMEOUT,
+            reply={'1': QuestionLoader.DEFAULT_QUESTION_REPLY},
+        )
+        return [result, ]
+
+
 class QuestionProvider:
+    _questions: List[GreetingQuestionDto] = QuestionLoader.load_questions()
+
     @staticmethod
     def get_question() -> GreetingQuestionDto:
-        return QuestionProvider.__get_random_question()
-
-    @staticmethod
-    def __get_random_question():
         """
-        This method create greeting question list of some questions
-        then return first random question from list
-        Note: if need more questions - need to rework this method
+        This method return random question from greeting questions list
         :return: GreetingQuestionDto
         """
-        greeting_question_ui = GreetingQuestionDto(
-            text='{mention}, UI это API?',
-            keyboard=InlineKeyboardMarkup().row(
-                InlineKeyboardButton(text='Да, определённо!', callback_data='да'),
-                InlineKeyboardButton(text='Нет, обоссыте меня', callback_data='нет'),
-            ),
-            timeout=120,
-            reply={
-                'да': '*{first_name} считает, что да.*',
-                'нет': '*{first_name} считает, что нет. ¯\\_(ツ)_/¯*',
-            }
-        )
-
-        greeting_question_git = GreetingQuestionDto(
-            text='{mention}, Git: merge или rebase?',
-            keyboard=InlineKeyboardMarkup().row(
-                InlineKeyboardButton(text='Конечно merge', callback_data='merge'),
-                InlineKeyboardButton(text='Конечно rebase', callback_data='rebase'),
-            ),
-            timeout=120,
-            reply={
-                'merge': '*{first_name} считает, что merge правильнее.*',
-                'rebase': '*{first_name} считает, что rebase правильнее.*',
-            }
-        )
-
-        greeting_question_bdd = GreetingQuestionDto(
-            text='{mention}, BDD это круто?',
-            keyboard=InlineKeyboardMarkup().row(
-                InlineKeyboardButton(text='Да, это круто!', callback_data='да'),
-                InlineKeyboardButton(text='Нет, это хуйня!', callback_data='нет'),
-            ),
-            timeout=120,
-            reply={
-                'да': '*{first_name} считает, что да. ¯\\_(ツ)_/¯*',
-                'нет': '*{first_name} считает, что нет.*',
-            }
-        )
-
-        greeting_list = [greeting_question_ui, greeting_question_git, greeting_question_bdd]
-
-        return random.choice(greeting_list)
+        return random.choice(QuestionProvider._questions)
+    
+    @staticmethod
+    def reload_questions_list():
+        """Reload greeting questions list"""
+        QuestionProvider._questions = QuestionLoader.load_questions()

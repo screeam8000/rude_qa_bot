@@ -1,0 +1,39 @@
+---
+global_question_timeout: 120
+questions:
+  - name: 'ui_is_api'
+    text: '{mention}, UI это API?'
+    options:
+      - option_text: 'Да, определённо!'
+        reply_text: '*{first_name} считает, что да.*'
+
+      - option_text: 'Нет, обоссыте меня'
+        reply_text: '*{first_name} считает, что нет. ¯\\_(ツ)_/¯*'
+
+  - name: 'git_for_me'
+    text: '{mention}, Git: merge или rebase?'
+    question_timeout: 120
+    options:
+      - option_text: 'Конечно merge'
+        reply_text: '*{first_name} считает, что merge правильнее.*'
+
+      - option_text: 'Конечно rebase'
+        reply_text: '*{first_name} считает, что rebase правильнее.*'
+
+  - name: 'bdd_for_me'
+    text: '{mention}, BDD это круто?'
+    options:
+      - option_text: 'Да, это круто!'
+        reply_text: '*{first_name} считает, что да. ¯\\_(ツ)_/¯*'
+
+      - option_text: 'Нет, это хуйня!'
+        reply_text: '*{first_name} считает, что нет.*'
+
+  - name: 'allure_for_me'
+    text: '{mention}, Allure EE это круто?'
+    options:
+      - option_text: 'Да, это круто!'
+        reply_text: '*{first_name} считает, что да. ¯\\_(ツ)_/¯*'
+
+      - option_text: 'Нет, это хуйня!'
+        reply_text: '*{first_name} считает, что нет.*'
