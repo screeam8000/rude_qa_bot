@@ -40,3 +40,7 @@ class UnauthorizedCommandError(InvalidConditionError):
             reply_to_message_id=message.message_id,
             parse_mode=TelegramParseMode.MARKDOWN,
         )
+        
+        
+class GreetingsLoadError(Exception):
+    pass
