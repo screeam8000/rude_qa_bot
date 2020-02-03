@@ -1,13 +1,26 @@
-version: '3.2'
+version: '3.4'
+
+x-default:
+  &default-bot
+  restart:
+    always
+  build:
+    context: .
+  volumes:
+    - ./resources/questions.yaml:/opt/app/resources/questions.yaml:ro
+  depends_on:
+    - tests
 
 services:
-  rudeboy_bot:
-    container_name: rudeboy_bot
+  tests:
+    restart:
+      "no"
     build:
       context: .
-    volumes:
-      - ./resources:/opt/app/resources
-    env_file:
-      - .env
-    command: "python -u src/rudeboy_bot.py"
-    restart: always
+      dockerfile: tests.Dockerfile
+      args:
+        BUILD_ENV: TEST
+
+  rudeboy_bot:
+    <<: *default-bot
+    env_file: [.env]

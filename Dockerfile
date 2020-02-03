@@ -1,27 +1,16 @@
-FROM python:3.7-slim as builder
+FROM python:3.7-slim-stretch as builder
 
 WORKDIR /opt/app
 
-VOLUME ["/opt/app/resources"]
+COPY ["build", "Pipfile.lock", "Pipfile", "./"]
+RUN ./pipenv-install.sh && ./cleanup.sh
 
-COPY ["build", "build"]
-RUN build/pip-require.sh build/requirements.txt
+FROM python:3.7-slim-stretch
 
-COPY ["requirements.txt", "./"]
-RUN build/pip-require.sh requirements.txt
-
-COPY ["src", "src"]
-RUN build/python-linter.sh src
-
-COPY ["tests", "tests"]
-RUN build/unittest.sh
-
-RUN build/cleanup.sh
-
-FROM python:3.7-slim
+WORKDIR /opt/app
 
 COPY --from=builder ["/usr/local/lib/python3.7/site-packages", "/usr/local/lib/python3.7/site-packages"]
-COPY ["bin", "bin"]
-COPY ["src", "src"]
 
-CMD ["bin/app"]
+COPY ["src", "./"]
+
+CMD ["python", "-u", "/opt/app/app.py"]

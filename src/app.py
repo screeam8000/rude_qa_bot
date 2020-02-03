@@ -24,7 +24,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 env_loader = EnvLoader(logger)
-env_loader.from_file()
 logger.setLevel(env_loader.get(EnvVar.LOGGING_LEVEL, LoggingSettings.DEFAULT_LEVEL))
 
 bot = TeleBot(
