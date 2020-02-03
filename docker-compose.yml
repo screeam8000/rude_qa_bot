@@ -2,10 +2,12 @@ version: '3.2'
 
 services:
   rudeboy_bot:
-    restart:
-      always
+    container_name: rudeboy_bot
     build:
       context: .
+    volumes:
+      - ./resources:/opt/app/resources
     env_file:
       - .env
     command: "python -u src/rudeboy_bot.py"
+    restart: always

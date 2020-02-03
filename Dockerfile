@@ -2,6 +2,8 @@ FROM python:3.7-slim as builder
 
 WORKDIR /opt/app
 
+VOLUME ["/opt/app/resources"]
+
 COPY ["build", "build"]
 RUN build/pip-require.sh build/requirements.txt
 
@@ -21,6 +23,5 @@ FROM python:3.7-slim
 COPY --from=builder ["/usr/local/lib/python3.7/site-packages", "/usr/local/lib/python3.7/site-packages"]
 COPY ["bin", "bin"]
 COPY ["src", "src"]
-COPY ["resources", "resources"]
 
 CMD ["bin/app"]
