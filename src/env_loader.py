@@ -1,18 +1,10 @@
 import logging
 import os
-from os.path import join, dirname, abspath
-
-from dotenv import load_dotenv
 
 
 class EnvLoader:
     def __init__(self, logger: logging.Logger):
         self._logger = logger
-
-    @staticmethod
-    def from_file():
-        dotenv_path = abspath(join(dirname(__file__), '..', '.env'))
-        load_dotenv(dotenv_path)
 
     def get(self, env_name: str, default: str = '', sensitive: bool = False) -> str:
         return self._get_env(env_name, default, sensitive)

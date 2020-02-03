@@ -9,6 +9,6 @@ else
     exit 0
 fi
 
-python -m unittest discover -s tests -p "*_test.py"
+pytest -k tests
 
 echo "Done."
