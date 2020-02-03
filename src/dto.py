@@ -163,3 +163,20 @@ class RestrictedUserDto:
     @property
     def restore_at(self) -> int:
         return self._restore_at
+
+
+class CommandDto:
+    _bot_command: str
+    _text: str
+
+    def __init__(self, bot_command: str, text_command: str):
+        self._bot_command = bot_command
+        self._text = text_command
+
+    @property
+    def bot_command(self) -> str:
+        return self._bot_command
+
+    @property
+    def text(self) -> str:
+        return self._text

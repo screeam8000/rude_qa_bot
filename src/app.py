@@ -8,7 +8,7 @@ from telebot import TeleBot
 from telebot.apihelper import ApiException
 from telebot.types import Message, CallbackQuery
 
-from const import EnvVar, TelegramParseMode, LoggingSettings, ChatCommand, \
+from const import EnvVar, TelegramParseMode, LoggingSettings, Command, \
     MessageSettings, BanDuration, RestrictDuration, TelegramMemberStatus
 from env_loader import EnvLoader
 from error import ParseBanDurationError, UserAlreadyInStorageError, UserStorageUpdateError, \
@@ -87,8 +87,8 @@ def me_handler(message: Message):
 
 
 @bot.message_handler(func=lambda m: m.text and m.text[:4].rstrip() in [
-    ChatCommand.RO,
-    ChatCommand.TO,
+    Command.RO.bot_command,
+    Command.TO.bot_command,
 ])
 @methods.rude_qa_only
 @methods.supergroup_only
@@ -101,8 +101,8 @@ def restrict_handler(message: Message):
 
         command = message.text[:3]
         task_list = {
-            f'{ChatCommand.RO}': methods.set_read_only,
-            f'{ChatCommand.TO}': methods.set_text_only,
+            f'{Command.RO.bot_command}': methods.set_read_only,
+            f'{Command.TO.bot_command}': methods.set_text_only,
         }
 
         try:
@@ -148,7 +148,7 @@ def restrict_handler(message: Message):
         pass
 
 
-@bot.message_handler(func=lambda m: m.text and m.text.strip() == ChatCommand.RW)
+@bot.message_handler(func=lambda m: m.text and m.text.strip() == Command.RW.bot_command)
 @methods.rude_qa_only
 @methods.supergroup_only
 def permit_handler(message: Message):
@@ -189,7 +189,7 @@ def permit_handler(message: Message):
         pass
 
 
-@bot.message_handler(func=lambda m: m.text and m.text[:5].rstrip() == ChatCommand.BAN)
+@bot.message_handler(func=lambda m: m.text and m.text[:5].rstrip() == Command.BAN.bot_command)
 @methods.rude_qa_only
 @methods.supergroup_only
 def ban_handler(message: Message):
@@ -284,7 +284,7 @@ def greeting_handler(message: Message):
             methods.delete_chat_message(greeting_message)
 
 
-@bot.message_handler(func=lambda m: m.text and m.text == ChatCommand.PASS)
+@bot.message_handler(func=lambda m: m.text and m.text == Command.PASS.bot_command)
 @methods.rude_qa_only
 @methods.supergroup_only
 def pass_handler(message: Message):
