@@ -1,4 +1,6 @@
-from dto import PluralFormsDto, DurationDto
+from pathlib import Path
+
+from dto import PluralFormsDto, DurationDto, CommandDto
 
 
 class TelegramChatType:
@@ -31,12 +33,14 @@ class EnvVar:
     LOGGING_LEVEL = 'LOGGING_LEVEL'
 
 
-class ChatCommand:
-    RO = '!ro'
-    TO = '!to'
-    RW = '!rw'
-    BAN = '!ban'
-    PASS = '!pass'
+class Command:
+    RO = CommandDto(bot_command='!ro', text_command='read_only')
+    TO = CommandDto(bot_command='!to', text_command='text_only')
+    RW = CommandDto(bot_command='!rw', text_command='read_write')
+    BAN = CommandDto(bot_command='!ban', text_command='ban_kick')
+    PASS = CommandDto(bot_command='!pass', text_command='pass')
+    TK = CommandDto(bot_command='', text_command='timeout_kick')
+    SR = CommandDto(bot_command='', text_command='unauthorized_punishment')  # Self restrict
 
 
 class BaseDuration:
@@ -121,3 +125,11 @@ class NotificationTemplateList:
         '{first_name} нажал не те кнопки и получает пизды в виде read-only.',
         '{first_name} дохуя о себе думает, поэтому теперь завалит ебало.',
     ]
+
+
+class GreetingDefaultSettings:
+    GREETING_QUESTIONS_FILE: Path = Path('resources/questions.yaml')
+    DEFAULT_QUESTION_TEXT = '{mention}, are you ok?'
+    DEFAULT_QUESTION_OPTION = 'Yep'
+    DEFAULT_QUESTION_REPLY = 'Sure!'
+    DEFAULT_QUESTION_TIMEOUT = 120

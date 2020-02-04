@@ -1,13 +1,13 @@
 import logging
 import random
-import yaml
-
 from pathlib import Path
 from typing import Dict, Any, List
 
+import yaml
 from telebot.types import InlineKeyboardButton, User, InlineKeyboardMarkup, Message
 from yaml.scanner import ScannerError
 
+from const import GreetingDefaultSettings
 from dto import GreetingQuestionDto, NewbieDto
 from error import UserAlreadyInStorageError, UserNotFoundInStorageError, UserStorageUpdateError, GreetingsLoadError
 
@@ -64,12 +64,6 @@ class NewbieStorage:
 
 
 class QuestionLoader:
-    GREETING_QUESTIONS_FILE: Path = Path('resources/questions.yaml')
-    DEFAULT_QUESTION_TEXT = '{mention}, are you ok?'
-    DEFAULT_QUESTION_OPTION = 'Yep'
-    DEFAULT_QUESTION_REPLY = 'Sure!'
-    DEFAULT_QUESTION_TIMEOUT = 120
-
     _logger = logging.getLogger('greetings_file_loader')  # Logger from baseConfig settings
 
     @staticmethod
@@ -92,7 +86,7 @@ class QuestionLoader:
     @staticmethod
     def _load_questions_from_file() -> List[GreetingQuestionDto]:
         """Main load questions method"""
-        questions_dict = QuestionLoader._load_from_file(QuestionLoader.GREETING_QUESTIONS_FILE)
+        questions_dict = QuestionLoader._load_from_file(GreetingDefaultSettings.GREETING_QUESTIONS_FILE)
         questions = questions_dict.get('questions', [])
 
         if not isinstance(questions, list):  # non-list
@@ -108,31 +102,31 @@ class QuestionLoader:
             replies = {}
             timeout = question.get(  # TODO: Int type check for global or move it to config
                 'question_timeout',
-                questions_dict.get('global_question_timeout', QuestionLoader.DEFAULT_QUESTION_TIMEOUT)
+                questions_dict.get('global_question_timeout', GreetingDefaultSettings.DEFAULT_QUESTION_TIMEOUT)
             )
             for i, opt in enumerate(question.get('options', [])):
                 buttons.append(
                     InlineKeyboardButton(
-                        text=opt.get('option_text', QuestionLoader.DEFAULT_QUESTION_OPTION),
+                        text=opt.get('option_text', GreetingDefaultSettings.DEFAULT_QUESTION_OPTION),
                         callback_data=str(i),
                     ))
-                replies[str(i)] = opt.get('reply_text', QuestionLoader.DEFAULT_QUESTION_REPLY)
+                replies[str(i)] = opt.get('reply_text', GreetingDefaultSettings.DEFAULT_QUESTION_REPLY)
 
             result.append(
                 GreetingQuestionDto(
-                    text=question.get('text', QuestionLoader.DEFAULT_QUESTION_TEXT),
+                    text=question.get('text', GreetingDefaultSettings.DEFAULT_QUESTION_TEXT),
                     keyboard=InlineKeyboardMarkup().row(*buttons),
                     timeout=timeout,
                     reply=replies,
                 ))
-            
+
         # Final questions check
         if not result:
             raise GreetingsLoadError(
                 f'No valid questions were extracted from yaml file! Content: {questions_dict}'
             )
         return result
-    
+
     @staticmethod
     def _validate(question) -> bool:
         """Super simple validator (no asserts)"""
@@ -142,11 +136,11 @@ class QuestionLoader:
         result = result and question.get('name', False)
         result = result and question.get('text', False)
         result = result and isinstance(question.get('question_timeout', 0), int)  # Optional field, only type check
-        
+
         options = question.get('options') if isinstance(question.get('options'), list) else []
         result = result and bool(options)
         result = result and len(options) > 0
-        
+
         for opt in options:
             if not isinstance(opt, dict):
                 result = False
@@ -154,7 +148,7 @@ class QuestionLoader:
             result = result and opt.get('option_text', False)
             result = result and opt.get('reply_text', False)
         return result
-    
+
     @staticmethod
     def _load_from_file(file_path: Path) -> Dict:
         """Load dict from yaml file"""
@@ -170,20 +164,20 @@ class QuestionLoader:
         if not isinstance(result, dict):
             raise GreetingsLoadError(f'Malformed (not a dict) questions file: {result}')
         return result
-               
+
     @staticmethod
     def _set_default_greeting() -> List[GreetingQuestionDto]:
         """Default greeting that will be used if file not available/broken"""
         result = GreetingQuestionDto(
-            text=QuestionLoader.DEFAULT_QUESTION_TEXT,
+            text=GreetingDefaultSettings.DEFAULT_QUESTION_TEXT,
             keyboard=InlineKeyboardMarkup().row(
                 InlineKeyboardButton(
-                    text=QuestionLoader.DEFAULT_QUESTION_OPTION,
+                    text=GreetingDefaultSettings.DEFAULT_QUESTION_OPTION,
                     callback_data='1',
                 ),
             ),
-            timeout=QuestionLoader.DEFAULT_QUESTION_TIMEOUT,
-            reply={'1': QuestionLoader.DEFAULT_QUESTION_REPLY},
+            timeout=GreetingDefaultSettings.DEFAULT_QUESTION_TIMEOUT,
+            reply={'1': GreetingDefaultSettings.DEFAULT_QUESTION_REPLY},
         )
         return [result, ]
 
@@ -198,7 +192,7 @@ class QuestionProvider:
         :return: GreetingQuestionDto
         """
         return random.choice(QuestionProvider._questions)
-    
+
     @staticmethod
     def reload_questions_list():
         """Reload greeting questions list"""

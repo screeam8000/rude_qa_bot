@@ -6,9 +6,9 @@ from telebot import TeleBot
 from telebot.apihelper import ApiException
 from telebot.types import User, Message
 
-from const import RestrictDuration, TelegramParseMode, ChatCommand, BanDuration, TelegramChatType, PunishmentDuration, \
+from const import RestrictDuration, TelegramParseMode, Command, BanDuration, TelegramChatType, PunishmentDuration, \
     BaseDuration
-from dto import DurationDto, PluralFormsDto, RestrictedUserDto, NewbieDto, RestrictionDto
+from dto import DurationDto, PluralFormsDto, RestrictedUserDto, NewbieDto, RestrictionDto, CommandDto
 from error import ParseBanDurationError, InvalidConditionError, UserNotFoundInStorageError
 from greeting import NewbieStorage
 from notification import Notification
@@ -115,17 +115,17 @@ class BotUtils:
         except ApiException:
             self._logger.error(f'Can not edit chat message {message}')
 
-    def check_current_restrictions(self, user: User, message: Message, duration: DurationDto, command: str):
+    def check_current_restrictions(self, user: User, message: Message, duration: DurationDto, command: CommandDto):
         chat_member = self._bot.get_chat_member(message.chat.id, user.id)
 
         restriction_list = {
-            ChatCommand.RO: RestrictionDto(
+            Command.RO: RestrictionDto(
                 True,
                 True if chat_member.can_send_media_messages is None else chat_member.can_send_media_messages,
                 True if chat_member.can_send_other_messages is None else chat_member.can_send_other_messages,
                 True if chat_member.can_add_web_page_previews is None else chat_member.can_add_web_page_previews,
             ),
-            ChatCommand.TO: RestrictionDto(
+            Command.TO: RestrictionDto(
                 True,
                 True,
                 True if chat_member.can_send_other_messages is None else chat_member.can_send_other_messages,
@@ -150,7 +150,7 @@ class BotUtils:
             user=user,
             message=message,
             duration=duration,
-            command=ChatCommand.RO,
+            command=Command.RO,
         )
 
         self._bot.restrict_chat_member(
@@ -163,7 +163,6 @@ class BotUtils:
             first_name=user.first_name,
             duration_text=duration.text,
         )
-
         return restriction_text
 
     def set_text_only(self, user: User, message: Message, duration: DurationDto) -> str:
@@ -171,7 +170,7 @@ class BotUtils:
             user=user,
             message=message,
             duration=duration,
-            command=ChatCommand.TO,
+            command=Command.TO,
         )
 
         self._bot.restrict_chat_member(
