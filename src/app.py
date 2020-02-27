@@ -311,6 +311,9 @@ def pass_handler(message: Message):
                     chat_id=target_message.chat.id,
                     user_id=newbie.user.id,
                     can_send_messages=True,
+                    can_send_media_messages=True,
+                    can_send_other_messages=True,
+                    can_add_web_page_previews=True
                 )
                 newbie_storage.remove(newbie.user)
                 return
