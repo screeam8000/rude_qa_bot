@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 pyTelegramBotAPI = "*"
-PyYAML = "==4.2b4"
+PyYAML = "==5.4"
 
 [dev-packages]
 pylint = "*"
