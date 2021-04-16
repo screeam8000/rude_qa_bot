@@ -37,3 +37,12 @@ questions:
 
       - option_text: 'Нет, это хуйня!'
         reply_text: '*{first_name} считает, что нет.*'
+        
+  - name: 'scrum_for_me'
+    text: '{mention}, Scrum это Kanban?'
+    options:
+      - option_text: 'Да'
+        reply_text: '*{first_name} считает, что да. ¯\\_(ツ)_/¯*'
+
+      - option_text: 'Kanban это Kanban'
+        reply_text: '*{first_name} считает, что нет.*'
